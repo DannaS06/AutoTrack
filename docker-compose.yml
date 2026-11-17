@@ -1,0 +1,54 @@
+services:
+  # 1. Base de Datos Relacional con Volumen Persistente
+  db:
+    image: mysql:8.0
+    container_name: autotrack_mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: autotrack_db
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3308:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Backend API REST (Django)
+  backend:
+    build: .
+    container_name: autotrack_backend
+    command: sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=True
+      - DB_NAME=autotrack_db
+      - DB_USER=root
+      - DB_PASSWORD=rootpassword
+      - DB_HOST=db
+      - DB_PORT=3306
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # 3. Frontend SPA (React + Vite)
+  frontend:
+    build: ./frontend
+    container_name: autotrack_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+# Volumen nombrado para persistencia de datos
+volumes:
+  mysql_data:

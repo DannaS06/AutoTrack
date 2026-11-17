@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: autotrack-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: autotrack-frontend
+  template:
+    metadata:
+      labels:
+        app: autotrack-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: autotrack-frontend:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5173
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: autotrack-frontend-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: autotrack-frontend
+  ports:
+    - port: 80
+      targetPort: 5173
